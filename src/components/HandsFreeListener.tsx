@@ -1,10 +1,12 @@
 import { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useStore } from '@/store';
-import { useVoiceEngine } from '@/components/useVoiceEngine';
+import { useVoiceEngine, isWakeWord } from '@/components/useVoiceEngine';
 import { useToast } from '@/components/Toast';
 
 export function HandsFreeListener({ onWake }: { onWake: () => void }) {
   const { state } = useStore();
+  const { t } = useTranslation();
   const { recognize, stopRecognizing, speak, playChime, recSupported } = useVoiceEngine();
   const { show } = useToast();
   const runningRef = useRef(false);
@@ -22,13 +24,11 @@ export function HandsFreeListener({ onWake }: { onWake: () => void }) {
       if (cancelled || runningRef.current) return;
       runningRef.current = true;
       const ok = recognize((text) => {
-        const heard = text.toLowerCase().trim();
-        const target = state.voice.wakeWord.toLowerCase().trim();
-        if (target && (heard.includes(target) || target.includes(heard))) {
+        if (isWakeWord(text, state.voice.wakeWord)) {
           playChime();
           onWake();
-          speak('Listening... How can I assist your recovery today?');
-          show({ type: 'success', title: 'Wake word detected', body: `"${state.voice.wakeWord}"` });
+          speak(t('hands_free.listening_msg'));
+          show({ type: 'success', title: t('hands_free.wake_detected'), body: t('hands_free.wake_detected_body', { wakeWord: state.voice.wakeWord }) });
         }
       }, () => {
         runningRef.current = false;
@@ -46,7 +46,7 @@ export function HandsFreeListener({ onWake }: { onWake: () => void }) {
       runningRef.current = false;
       stopRecognizing();
     };
-  }, [state.voice.handsFree, state.authed, state.voice.wakeWord, recSupported]);
+  }, [state.voice.handsFree, state.authed, state.voice.wakeWord, recSupported, t, speak, playChime, recognize, stopRecognizing, show, onWake]);
 
   return null;
 }

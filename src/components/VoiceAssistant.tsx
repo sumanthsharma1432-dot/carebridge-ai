@@ -1,69 +1,71 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mic, X, Sparkles, Volume2, AlertTriangle, Pill, Activity, Send, VolumeX } from 'lucide-react';
 import { useStore } from '@/store';
 import { useToast } from '@/components/Toast';
 import { useRouter } from '@/router';
-import { useVoiceEngine } from '@/components/useVoiceEngine';
+import { useVoiceEngine, stripWakeWord } from '@/components/useVoiceEngine';
 
 type Phase = 'idle' | 'listening' | 'thinking' | 'speaking';
 
 interface Msg { id: string; from: 'user' | 'ai'; text: string }
 
-const FAQ: { match: string[]; reply: string }[] = [
-  { match: ['shower', 'bath', 'wash'], reply: "You can usually shower 48 hours after surgery once your incision is sealed. Avoid soaking the wound, and gently pat it dry — don't rub. If you have surgical glue or staples, ask your doctor before bathing." },
-  { match: ['eat', 'food', 'diet', 'nutrition'], reply: "Focus on protein-rich foods like eggs, fish, and legumes to support healing. Include vitamin C from citrus and leafy greens for collagen formation. Stay hydrated, and avoid processed foods, excess sugar, and alcohol while recovering." },
-  { match: ['medication', 'take my med', 'how do i take', 'pill', 'medicine'], reply: "Take your prescribed medications exactly as directed on the label. Don't skip doses, and complete the full antibiotic course even if you feel better. Take pain medication with food to prevent nausea, and never mix with alcohol." },
-  { match: ['incision', 'wound', 'stitches', 'scar'], reply: "Keep your incision clean and dry. Watch for signs of infection: increasing redness, warmth, swelling, pus, or opening of the wound. Don't pick at scabs or stitches. Gentle scar massage can start once fully healed, around 2-3 weeks." },
-  { match: ['exercise', 'walk', 'move', 'activity'], reply: "Start with short, gentle walks to improve circulation and prevent blood clots. Avoid heavy lifting, strenuous exercise, or driving until your doctor clears you — usually 2-6 weeks depending on your procedure." },
-  { match: ['sleep', 'rest', 'tired'], reply: "Rest is essential for healing. Sleep on your back or in a position that doesn't put pressure on the surgical site. Use pillows for support. It's normal to feel more tired than usual — your body is using energy to repair tissue." },
-  { match: ['fever', 'temperature', 'hot'], reply: "A low-grade fever (under 100.4°F) is common in the first 48 hours. If your fever exceeds 101°F, lasts more than 3 days, or comes with chills or severe pain, contact your doctor immediately — it may indicate infection." },
-  { match: ['constipation', 'bowel', 'digestion'], reply: "Post-surgery constipation is common due to anesthesia and pain medication. Drink plenty of water, eat fiber-rich foods like fruits and whole grains, and take short walks. If it persists beyond 3 days, ask your doctor about a mild laxative." },
-];
-
-function generateReply(query: string, patient: any): string {
-  const lower = query.toLowerCase();
-  for (const f of FAQ) {
-    if (f.match.some(m => lower.includes(m))) return f.reply;
-  }
-  if (lower.includes('recovery') || lower.includes('how am i') || lower.includes('doing')) {
-    return `Your recovery score is ${patient.recoveryScore} percent, and it's improving. You're on day ${patient.recoveryDay} of recovery. Keep up the great work!`;
-  }
-  if (lower.includes('pain') || lower.includes('hurt')) {
-    const sev = lower.includes('severe') || lower.includes('bad') || lower.includes('a lot') || lower.includes('high');
-    return sev
-      ? "I'm sorry you're in severe pain. I've flagged this as a high-risk alert and notified your care team. Would you like me to open the SOS screen?"
-      : "I understand you're in pain. Make sure to log your pain level in the daily check-in, and take your prescribed medication. If it gets worse, let me know.";
-  }
-  if (lower.includes('next') && (lower.includes('med') || lower.includes('pill'))) {
-    const next = patient.medications.find((m: any) => !m.taken);
-    return next
-      ? `Your next medication is ${next.name} ${next.dosage}, scheduled at ${next.time}. Instructions: ${next.instructions}.`
-      : "You've taken all your medications today. Great job on your adherence!";
-  }
-  if (lower.includes('medication') || lower.includes('med') || lower.includes('pill')) {
-    const next = patient.medications.find((m: any) => !m.taken);
-    return next
-      ? `Your next medication is ${next.name} ${next.dosage}, scheduled at ${next.time}. Instructions: ${next.instructions}.`
-      : "You've taken all your medications today. Great job on your adherence!";
-  }
-  if (lower.includes('vital') || lower.includes('heart') || lower.includes('blood')) {
-    return `Your latest vitals: heart rate ${patient.vitals.heartRate} bpm, blood pressure ${patient.vitals.bloodPressure}, blood oxygen ${patient.vitals.oxygen} percent. All within healthy ranges.`;
-  }
-  if (lower.includes('appointment') || lower.includes('doctor')) {
-    return `Your next appointment is ${patient.nextAppointment.date} at ${patient.nextAppointment.time} with ${patient.nextAppointment.doctor}. It's a ${patient.nextAppointment.type}.`;
-  }
-  if (lower.includes('hello') || lower.includes('hi') || lower.includes('hey')) {
-    return "Hello! I can help with your recovery, medications, pain, vitals, or appointments. You can also ask about showering, diet, exercise, wound care, or sleep.";
-  }
-  return `I can help with your recovery score, pain levels, medications, vitals, appointments, or post-op questions about showering, diet, exercise, wound care, and sleep. Try asking about one of those.`;
-}
-
 export function VoiceAssistant({ externalOpen, onExternalOpenChange }: { externalOpen?: boolean; onExternalOpenChange?: (open: boolean) => void }) {
+  const { t } = useTranslation();
   const { state, setState } = useStore();
   const { show } = useToast();
   const { navigate } = useRouter();
-  const { speak, stopSpeaking, recognize, stopRecognizing, recSupported } = useVoiceEngine();
+  const { speak, stopSpeaking, recognize, stopRecognizing, recSupported, speechLang } = useVoiceEngine();
+
+  const FAQ: { match: string[]; reply: string }[] = [
+    { match: ['shower', 'bath', 'wash'], reply: t('voice_assistant.faq_shower') },
+    { match: ['eat', 'food', 'diet', 'nutrition'], reply: t('voice_assistant.faq_diet') },
+    { match: ['medication', 'take my med', 'how do i take', 'pill', 'medicine'], reply: t('voice_assistant.faq_medication') },
+    { match: ['incision', 'wound', 'stitches', 'scar'], reply: t('voice_assistant.faq_incision') },
+    { match: ['exercise', 'walk', 'move', 'activity'], reply: t('voice_assistant.faq_exercise') },
+    { match: ['sleep', 'rest', 'tired'], reply: t('voice_assistant.faq_sleep') },
+    { match: ['fever', 'temperature', 'hot'], reply: t('voice_assistant.faq_fever') },
+    { match: ['constipation', 'bowel', 'digestion'], reply: t('voice_assistant.faq_constipation') },
+  ];
+
+  const generateReply = (query: string, patient: any): string => {
+    const lower = query.toLowerCase();
+    for (const f of FAQ) {
+      if (f.match.some(m => lower.includes(m))) return f.reply;
+    }
+    if (lower.includes('recovery') || lower.includes('how am i') || lower.includes('doing')) {
+      return t('voice_assistant.reply_recovery', { score: patient.recoveryScore, day: patient.recoveryDay });
+    }
+    if (lower.includes('pain') || lower.includes('hurt')) {
+      const sev = lower.includes('severe') || lower.includes('bad') || lower.includes('a lot') || lower.includes('high');
+      return sev
+        ? t('voice_assistant.reply_pain_severe')
+        : t('voice_assistant.reply_pain_mild');
+    }
+    if (lower.includes('next') && (lower.includes('med') || lower.includes('pill'))) {
+      const next = patient.medications.find((m: any) => !m.taken);
+      return next
+        ? t('voice_assistant.reply_next_med', { name: next.name, dosage: next.dosage, time: next.time, instructions: next.instructions })
+        : t('voice_assistant.reply_all_meds');
+    }
+    if (lower.includes('medication') || lower.includes('med') || lower.includes('pill')) {
+      const next = patient.medications.find((m: any) => !m.taken);
+      return next
+        ? t('voice_assistant.reply_next_med', { name: next.name, dosage: next.dosage, time: next.time, instructions: next.instructions })
+        : t('voice_assistant.reply_all_meds');
+    }
+    if (lower.includes('vital') || lower.includes('heart') || lower.includes('blood')) {
+      return t('voice_assistant.reply_vitals', { hr: patient.vitals.heartRate, bp: patient.vitals.bloodPressure, oxygen: patient.vitals.oxygen });
+    }
+    if (lower.includes('appointment') || lower.includes('doctor')) {
+      return t('voice_assistant.reply_appointment', { date: patient.nextAppointment.date, time: patient.nextAppointment.time, doctor: patient.nextAppointment.doctor, type: patient.nextAppointment.type });
+    }
+    if (lower.includes('hello') || lower.includes('hi') || lower.includes('hey')) {
+      return t('voice_assistant.reply_hello');
+    }
+    return t('voice_assistant.reply_fallback');
+  };
 
   const [internalOpen, setInternalOpen] = useState(false);
   const open = externalOpen !== undefined ? externalOpen : internalOpen;
@@ -72,7 +74,7 @@ export function VoiceAssistant({ externalOpen, onExternalOpenChange }: { externa
   const [transcript, setTranscript] = useState('');
   const [text, setText] = useState('');
   const [msgs, setMsgs] = useState<Msg[]>([
-    { id: 'init', from: 'ai', text: "Hi! I'm your CareBridge assistant. Ask about your recovery, medications, or post-op questions like 'When can I shower?' or 'What should I eat?'" },
+    { id: 'init', from: 'ai', text: t('voice_assistant.init_msg') },
   ]);
   const recRef = useRef<any>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -90,30 +92,30 @@ export function VoiceAssistant({ externalOpen, onExternalOpenChange }: { externa
       addMsg('ai', reply);
       const lower = query.toLowerCase();
       if (lower.includes('pain') && (lower.includes('severe') || lower.includes('bad') || lower.includes('high'))) {
-        setState(s => ({ ...s, alerts: [{ id: 'va' + Date.now(), patientId: p.id, type: 'Voice Alert', level: 'high', time: 'now', message: 'Patient reported severe pain via voice assistant' }, ...s.alerts] }));
-        show({ type: 'error', title: 'High-Risk Alert Flagged', body: 'Care team notified of severe pain report' });
-        p.emergencyContacts.forEach((c: any) => show({ type: 'sms', title: `Emergency Alert SMS sent to ${c.name}`, body: c.phone }));
+        setState(s => ({ ...s, alerts: [{ id: 'va' + Date.now(), patientId: p.id, type: 'Voice Alert', level: 'high', time: 'now', message: t('voice_assistant.pain_alert') }, ...s.alerts] }));
+        show({ type: 'error', title: t('voice_assistant.high_risk_flagged'), body: t('voice_assistant.care_team_notified') });
+        p.emergencyContacts.forEach((c: any) => show({ type: 'sms', title: t('voice_assistant.sms_sent_name', { name: c.name }), body: c.phone }));
         setTimeout(() => navigate('sos'), 1500);
       }
       speak(reply, () => setPhase('idle'));
       setPhase('speaking');
     }, 700);
-  }, [state.patients, setState, show, navigate, speak]);
+  }, [state.patients, setState, show, navigate, speak, t]);
 
   const startListening = () => {
     if (!recSupported) {
-      show({ type: 'info', title: 'Voice input unavailable', body: 'Type your question instead — your browser does not support speech recognition.' });
+      show({ type: 'info', title: t('voice_assistant.voice_unavailable'), body: t('voice_assistant.browser_no_rec') });
       return;
     }
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     const rec = new SR();
-    const langMap: Record<string, string> = { English: 'en-US', Spanish: 'es-ES', French: 'fr-FR', German: 'de-DE', Hindi: 'hi-IN' };
-    rec.lang = langMap[state.language] || 'en-US';
+    rec.lang = speechLang;
     rec.interimResults = false; rec.continuous = false;
     rec.onresult = (e: any) => {
-      const txt = e.results[0][0].transcript;
+      const raw = e.results[0][0].transcript;
+      const txt = stripWakeWord(raw);
       setTranscript(txt);
-      processQuery(txt);
+      if (txt) processQuery(txt);
     };
     rec.onend = () => setPhase(p => p === 'listening' ? 'idle' : p);
     rec.onerror = () => setPhase('idle');
@@ -138,10 +140,10 @@ export function VoiceAssistant({ externalOpen, onExternalOpenChange }: { externa
   const close = () => { setOpen(false); stopSpeaking(); stopRecognizing(); setPhase('idle'); };
 
   const quickPrompts = [
-    { label: 'Recovery?', q: 'How is my recovery going?', icon: Activity },
-    { label: 'Next med?', q: 'What medication do I take next?', icon: Pill },
-    { label: 'Shower?', q: 'When can I shower after surgery?', icon: Sparkles },
-    { label: 'I feel pain', q: 'I feel severe pain', icon: AlertTriangle },
+    { label: t('voice_assistant.prompt_recovery'), q: t('voice_assistant.q_recovery'), icon: Activity },
+    { label: t('voice_assistant.prompt_next_med'), q: t('voice_assistant.q_next_med'), icon: Pill },
+    { label: t('voice_assistant.prompt_shower'), q: t('voice_assistant.q_shower'), icon: Sparkles },
+    { label: t('voice_assistant.prompt_pain'), q: t('voice_assistant.q_pain'), icon: AlertTriangle },
   ];
 
   return (
@@ -171,8 +173,8 @@ export function VoiceAssistant({ externalOpen, onExternalOpenChange }: { externa
                 <div className="flex items-center gap-2">
                   <Sparkles size={18} />
                   <div>
-                    <p className="font-bold text-sm">CareBridge Assistant</p>
-                    <p className="text-[10px] text-primary-200">{phase === 'listening' ? 'Listening…' : phase === 'speaking' ? 'Speaking…' : phase === 'thinking' ? 'Thinking…' : 'Tap mic or type a question'}</p>
+                    <p className="font-bold text-sm">{t('voice_assistant.title')}</p>
+                    <p className="text-[10px] text-primary-200">{phase === 'listening' ? t('voice_assistant.listening') : phase === 'speaking' ? t('voice_assistant.speaking') : phase === 'thinking' ? t('voice_assistant.thinking') : t('voice_assistant.tap_or_type')}</p>
                   </div>
                 </div>
                 <button onClick={close}><X size={20} /></button>
@@ -186,7 +188,7 @@ export function VoiceAssistant({ externalOpen, onExternalOpenChange }: { externa
                       <p className="whitespace-pre-wrap">{m.text}</p>
                       {m.from === 'ai' && m.id !== 'init' && (
                         <button onClick={() => speakMsg(m)} className="mt-1.5 flex items-center gap-1 text-[10px] font-semibold text-primary-600 dark:text-primary-400 hover:text-primary-700 transition">
-                          <Volume2 size={11} /> Speak Response
+                          <Volume2 size={11} /> {t('voice_assistant.speak_response')}
                         </button>
                       )}
                     </div>
@@ -254,7 +256,7 @@ export function VoiceAssistant({ externalOpen, onExternalOpenChange }: { externa
                   value={text}
                   onChange={e => setText(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendText(); } }}
-                  placeholder="Type your message or recovery question..."
+                  placeholder={t('voice_assistant.type_placeholder')}
                   className="flex-1 input !py-2 !text-sm"
                 />
                 <button onClick={sendText} disabled={!text.trim()} className="w-10 h-10 rounded-xl bg-primary-600 text-white flex items-center justify-center disabled:opacity-40 transition hover:bg-primary-700">

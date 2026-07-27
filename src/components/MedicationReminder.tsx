@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Pill, X, Check, Clock, Bell } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useStore } from '@/store';
 import { useToast } from '@/components/Toast';
 import { Button } from '@/components/ui';
 
 export function MedicationReminder() {
+  const { t } = useTranslation();
   const { state, setState } = useStore();
   const { show } = useToast();
   const [active, setActive] = useState<{ medId: string; name: string; dosage: string } | null>(null);
@@ -29,13 +31,13 @@ export function MedicationReminder() {
       patients[0] = { ...patients[0], medications: patients[0].medications.map(m => m.id === active.medId ? { ...m, taken: true } : m) };
       return { ...s, patients };
     });
-    show({ type: 'success', title: `${active.name} marked as taken`, body: 'Logged to your medication history' });
+    show({ type: 'success', title: t('med_reminder.marked_taken', { name: active.name }), body: t('med_reminder.logged_history') });
     setActive(null);
   };
 
   const snooze = () => {
     if (!active) return;
-    show({ type: 'info', title: 'Reminder snoozed', body: "We'll remind you again in 15 minutes" });
+    show({ type: 'info', title: t('med_reminder.snoozed'), body: t('med_reminder.remind_15') });
     setActive(null);
   };
 
@@ -47,7 +49,7 @@ export function MedicationReminder() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <div className="w-9 h-9 rounded-xl bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center"><Bell size={18} className="text-primary-600" /></div>
-                <p className="font-bold text-slate-800 dark:text-white text-sm">Medication Reminder</p>
+                <p className="font-bold text-slate-800 dark:text-white text-sm">{t('med_reminder.title')}</p>
               </div>
               <button onClick={() => setActive(null)}><X size={18} className="text-slate-400" /></button>
             </div>
@@ -57,12 +59,12 @@ export function MedicationReminder() {
                 <Pill size={32} className="text-emerald-600" />
               </motion.div>
               <p className="text-lg font-extrabold text-slate-800 dark:text-white">{active.name} {active.dosage}</p>
-              <p className="text-xs text-slate-500 mt-1 flex items-center gap-1"><Clock size={12} /> It's time to take your medication</p>
+              <p className="text-xs text-slate-500 mt-1 flex items-center gap-1"><Clock size={12} /> {t('med_reminder.subtitle')}</p>
             </div>
 
             <div className="flex gap-3 mt-4">
-              <Button variant="ghost" className="flex-1" onClick={snooze}><Clock size={16} /> Snooze 15m</Button>
-              <Button variant="success" className="flex-1" onClick={markTaken}><Check size={16} /> Mark as Taken</Button>
+              <Button variant="ghost" className="flex-1" onClick={snooze}><Clock size={16} /> {t('med_reminder.snooze')}</Button>
+              <Button variant="success" className="flex-1" onClick={markTaken}><Check size={16} /> {t('med_reminder.mark_taken')}</Button>
             </div>
           </motion.div>
         </motion.div>

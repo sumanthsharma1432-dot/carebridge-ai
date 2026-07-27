@@ -1,21 +1,23 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Camera, Scan, X, CheckCircle2, AlertTriangle, ShieldAlert, Upload } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Card, Button, Chip } from '@/components/ui';
 
 type Result = { level: 'green' | 'yellow' | 'red'; title: string; desc: string };
 
-const RESULTS: Result[] = [
-  { level: 'green', title: 'Healing Well', desc: 'No signs of inflammation detected. The incision looks clean.' },
-  { level: 'yellow', title: 'Mild Redness', desc: 'Some redness detected. Monitor closely for 48 hours.' },
-  { level: 'red', title: 'Possible Infection', desc: 'Signs of infection detected. Doctor has been flagged for review.' },
-];
-
 export function WoundScanner({ compact = false }: { compact?: boolean }) {
+  const { t } = useTranslation();
   const [photo, setPhoto] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const RESULTS: Result[] = [
+    { level: 'green', title: t('wound_scanner.result_healing'), desc: t('wound_scanner.desc_healing') },
+    { level: 'yellow', title: t('wound_scanner.result_redness'), desc: t('wound_scanner.desc_redness') },
+    { level: 'red', title: t('wound_scanner.result_infection'), desc: t('wound_scanner.desc_infection') },
+  ];
 
   const pick = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -45,7 +47,7 @@ export function WoundScanner({ compact = false }: { compact?: boolean }) {
   return (
     <Card className={compact ? '' : 'mb-4'}>
       <p className="font-bold text-slate-800 dark:text-white text-sm mb-3 flex items-center gap-2">
-        <Scan size={16} className="text-primary-600" /> Wound & Incision Scanner
+        <Scan size={16} className="text-primary-600" /> {t('wound_scanner.title')}
       </p>
 
       <input ref={fileRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={pick} />
@@ -53,7 +55,7 @@ export function WoundScanner({ compact = false }: { compact?: boolean }) {
       {!photo && (
         <button onClick={() => fileRef.current?.click()} className="w-full border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl py-8 flex flex-col items-center gap-2 text-slate-400 hover:border-primary-400 hover:text-primary-500 transition">
           <Camera size={32} />
-          <span className="text-sm font-medium">Upload or take a photo of the surgical site</span>
+          <span className="text-sm font-medium">{t('wound_scanner.upload_hint')}</span>
         </button>
       )}
 
@@ -67,7 +69,7 @@ export function WoundScanner({ compact = false }: { compact?: boolean }) {
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-primary-900/30 backdrop-blur-sm flex flex-col items-center justify-center">
                 <motion.div animate={{ y: [0, 180, 0] }} transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }} className="absolute top-2 left-0 right-0 h-0.5 bg-primary-400 shadow-glow" />
                 <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 1, repeat: Infinity }} className="text-white text-sm font-semibold flex items-center gap-2">
-                  <Scan size={18} /> Analyzing…
+                  <Scan size={18} /> {t('wound_scanner.analyzing')}
                 </motion.div>
               </motion.div>
             )}
@@ -92,9 +94,9 @@ export function WoundScanner({ compact = false }: { compact?: boolean }) {
 
       {photo && !scanning && (
         <div className="flex gap-2 mt-3">
-          {!result && <Button className="flex-1" onClick={scan}><Scan size={16} /> Run AI Scan</Button>}
-          {result && <Button variant="outline" className="flex-1" onClick={scan}><Scan size={16} /> Scan Again</Button>}
-          <Button variant="ghost" onClick={() => fileRef.current?.click()}><Upload size={16} /> New Photo</Button>
+          {!result && <Button className="flex-1" onClick={scan}><Scan size={16} /> {t('wound_scanner.run_scan')}</Button>}
+          {result && <Button variant="outline" className="flex-1" onClick={scan}><Scan size={16} /> {t('wound_scanner.scan_again')}</Button>}
+          <Button variant="ghost" onClick={() => fileRef.current?.click()}><Upload size={16} /> {t('wound_scanner.new_photo')}</Button>
         </div>
       )}
     </Card>

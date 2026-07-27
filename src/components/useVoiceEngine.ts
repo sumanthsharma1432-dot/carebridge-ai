@@ -1,13 +1,30 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useStore } from '@/store';
+import { getSpeechLang, getLangInfo } from '@/i18n';
 
-const LANG_MAP: Record<string, string> = {
-  en: 'en-US', es: 'es-ES', hi: 'hi-IN', fr: 'fr-FR', de: 'de-DE',
-  English: 'en-US', Spanish: 'es-ES', French: 'fr-FR', German: 'de-DE', Hindi: 'hi-IN',
-};
+const WAKE_WORD_PATTERNS = [
+  'hey care bridge', 'care bridge', 'hey carebridge', 'carebridge',
+  'hey care', 'hey bridge', 'hey doctor',
+];
 
-export function getSpeechLang(language: string): string {
-  return LANG_MAP[language?.slice(0, 2)] || LANG_MAP[language] || 'en-US';
+export function stripWakeWord(text: string): string {
+  let result = text.trim();
+  const lower = result.toLowerCase();
+  for (const pattern of WAKE_WORD_PATTERNS) {
+    if (lower.startsWith(pattern)) {
+      result = result.slice(pattern.length).trim();
+      break;
+    }
+  }
+  return result;
+}
+
+export function isWakeWord(text: string, wakeWord: string): boolean {
+  const lower = text.toLowerCase().trim();
+  const target = wakeWord.toLowerCase().trim();
+  if (!target) return false;
+  if (lower.includes(target) || target.includes(lower)) return true;
+  return WAKE_WORD_PATTERNS.some(p => lower.includes(p));
 }
 
 export function useVoiceEngine() {
@@ -16,6 +33,9 @@ export function useVoiceEngine() {
   const [speechSupported, setSpeechSupported] = useState(true);
   const [recSupported, setRecSupported] = useState(true);
   const recRef = useRef<any>(null);
+
+  const langCode = LANGUAGES.find(l => l.label === state.language)?.code || 'en';
+  const speechLang = getSpeechLang(langCode);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) { setSpeechSupported(false); return; }
@@ -35,17 +55,20 @@ export function useVoiceEngine() {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) { onEnd?.(); return; }
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
-    u.lang = getSpeechLang(state.language);
+    u.lang = speechLang;
     u.pitch = state.voice.pitch;
     u.rate = state.voice.rate;
     if (state.voice.voiceName) {
       const v = voices.find(v => v.name === state.voice.voiceName);
       if (v) u.voice = v;
+    } else {
+      const nativeVoice = voices.find(v => v.lang.toLowerCase().startsWith(langCode));
+      if (nativeVoice) u.voice = nativeVoice;
     }
     u.onend = () => onEnd?.();
     u.onerror = () => onEnd?.();
     window.speechSynthesis.speak(u);
-  }, [state.language, state.voice, voices]);
+  }, [speechLang, state.voice, voices, langCode]);
 
   const stopSpeaking = useCallback(() => { window.speechSynthesis?.cancel(); }, []);
 
@@ -54,7 +77,7 @@ export function useVoiceEngine() {
     if (!SR) return false;
     try { recRef.current?.stop(); } catch {}
     const rec = new SR();
-    rec.lang = getSpeechLang(state.language);
+    rec.lang = speechLang;
     rec.interimResults = false;
     rec.continuous = continuous;
     rec.onresult = (e: any) => {
@@ -65,7 +88,7 @@ export function useVoiceEngine() {
     rec.onerror = () => onEnd?.();
     recRef.current = rec;
     try { rec.start(); return true; } catch { return false; }
-  }, [state.language]);
+  }, [speechLang]);
 
   const stopRecognizing = useCallback(() => { try { recRef.current?.stop(); } catch {} }, []);
 
@@ -88,5 +111,7 @@ export function useVoiceEngine() {
     } catch {}
   }, []);
 
-  return { voices, speechSupported, recSupported, speak, stopSpeaking, recognize, stopRecognizing, updateVoice, playChime, state };
+  return { voices, speechSupported, recSupported, speak, stopSpeaking, recognize, stopRecognizing, updateVoice, playChime, state, langCode, speechLang };
 }
+
+import { LANGUAGES } from '@/i18n';

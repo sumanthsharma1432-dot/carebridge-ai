@@ -2,27 +2,29 @@ import { motion } from 'framer-motion';
 import { Home, ClipboardList, Pill, BrainCircuit, MessageCircle, Stethoscope, Users, Shield } from 'lucide-react';
 import { useRouter, type Route } from '@/router';
 import { useStore } from '@/store';
+import { useTranslation } from 'react-i18next';
 
 export function BottomNav() {
   const { route, navigate } = useRouter();
   const { state } = useStore();
+  const { t } = useTranslation();
 
   if (state.role === 'doctor') {
     const items: { id: Route; label: string; icon: typeof Home }[] = [
-      { id: 'doctor-home', label: 'Patients', icon: Users },
-      { id: 'doctor-telehealth', label: 'Telehealth', icon: MessageCircle },
-      { id: 'admin', label: 'Admin', icon: Shield },
-      { id: 'profile', label: 'Profile', icon: Stethoscope },
+      { id: 'doctor-home', label: t('nav.patients'), icon: Users },
+      { id: 'doctor-telehealth', label: t('nav.telehealth'), icon: MessageCircle },
+      { id: 'admin', label: t('nav.admin'), icon: Shield },
+      { id: 'profile', label: t('nav.profile'), icon: Stethoscope },
     ];
     return <Nav items={items} route={route} navigate={navigate} />;
   }
 
   const items: { id: Route; label: string; icon: typeof Home }[] = [
-    { id: 'patient-home', label: 'Home', icon: Home },
-    { id: 'checkin', label: 'Check-in', icon: ClipboardList },
-    { id: 'medication', label: 'Meds', icon: Pill },
-    { id: 'ai-analysis', label: 'AI', icon: BrainCircuit },
-    { id: 'doctor-chat', label: 'Doctor', icon: MessageCircle },
+    { id: 'patient-home', label: t('nav.home'), icon: Home },
+    { id: 'checkin', label: t('nav.checkin'), icon: ClipboardList },
+    { id: 'medication', label: t('nav.meds'), icon: Pill },
+    { id: 'ai-analysis', label: t('nav.ai'), icon: BrainCircuit },
+    { id: 'doctor-chat', label: t('nav.doctor'), icon: MessageCircle },
   ];
   return <Nav items={items} route={route} navigate={navigate} />;
 }
