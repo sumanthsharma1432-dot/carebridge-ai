@@ -6,12 +6,14 @@ import { useStore } from '@/store';
 import { Button } from '@/components/ui';
 import { useVoiceEngine } from '@/components/useVoiceEngine';
 import { useToast } from '@/components/Toast';
+import { useTranslation } from 'react-i18next';
 
 export function Login() {
   const { navigate, back } = useRouter();
   const { state, update } = useStore();
   const { speak, recognize, recSupported, speechSupported } = useVoiceEngine();
   const { show } = useToast();
+  const { t } = useTranslation();
   const [mode, setMode] = useState<'login' | 'register' | 'forgot'>('login');
   const [role, setRole] = useState<'patient' | 'doctor'>(state.role);
   const [email, setEmail] = useState(role === 'patient' ? 'sarah@carebridge.app' : 'drchen@carebridge.app');
@@ -26,7 +28,7 @@ export function Login() {
   };
 
   const voiceSignIn = () => {
-    if (!recSupported) { show({ type: 'info', title: 'Voice sign-in unavailable', body: 'Your browser does not support speech recognition. Use the form below.' }); return; }
+    if (!recSupported) { show({ type: 'info', title: t('login.voice_signin_unavailable'), body: t('login.browser_no_speech') }); return; }
     setVoiceActive(true);
     const ok = recognize((text) => {
       const lower = text.toLowerCase();
@@ -38,16 +40,16 @@ export function Login() {
       if (nameMatch) name = nameMatch[1];
       setVoiceActive(false);
       update({ role: parsedRole, authed: true });
-      const greeting = `Welcome back, ${name}. Logging you in now`;
-      show({ type: 'success', title: 'Voice Sign-In Successful', body: greeting });
+      const greeting = t('login.welcome_back_name', { name });
+      show({ type: 'success', title: t('login.voice_signin_success'), body: greeting });
       if (speechSupported) speak(greeting, () => navigate(parsedRole === 'patient' ? 'patient-home' : 'doctor-home'));
       else navigate(parsedRole === 'patient' ? 'patient-home' : 'doctor-home');
     }, () => setVoiceActive(false));
-    if (!ok) { setVoiceActive(false); show({ type: 'info', title: 'Microphone unavailable', body: 'Speech recognition is not supported.' }); }
+    if (!ok) { setVoiceActive(false); show({ type: 'info', title: t('login.mic_unavailable'), body: t('login.speech_not_supported') }); }
   };
 
   const voiceSignUp = () => {
-    if (!recSupported) { show({ type: 'info', title: 'Voice registration unavailable', body: 'Your browser does not support speech recognition. Use the form below.' }); return; }
+    if (!recSupported) { show({ type: 'info', title: t('login.voice_reg_unavailable'), body: t('login.browser_no_speech') }); return; }
     setVoiceActive(true);
     const ok = recognize((text) => {
       const lower = text.toLowerCase();
@@ -59,19 +61,19 @@ export function Login() {
       if (nameMatch) name = nameMatch[1];
       setVoiceActive(false);
       update({ role: parsedRole, authed: true });
-      const greeting = `Account created. Welcome, ${name}. Logging you in now`;
-      show({ type: 'success', title: 'Voice Registration Successful', body: greeting });
+      const greeting = t('login.account_created', { name });
+      show({ type: 'success', title: t('login.voice_reg_success'), body: greeting });
       if (speechSupported) speak(greeting, () => navigate(parsedRole === 'patient' ? 'patient-home' : 'doctor-home'));
       else navigate(parsedRole === 'patient' ? 'patient-home' : 'doctor-home');
     }, () => setVoiceActive(false));
-    if (!ok) { setVoiceActive(false); show({ type: 'info', title: 'Microphone unavailable', body: 'Speech recognition is not supported.' }); }
+    if (!ok) { setVoiceActive(false); show({ type: 'info', title: t('login.mic_unavailable'), body: t('login.speech_not_supported') }); }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-primary-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 p-6">
       <div className="max-w-md mx-auto pt-10">
         <button onClick={back} className="mb-6 text-slate-400 flex items-center gap-1 text-sm">
-          <ArrowLeft size={16} /> Back
+          <ArrowLeft size={16} /> {t('common.back')}
         </button>
 
         <div className="flex items-center gap-3 mb-8">
@@ -79,8 +81,8 @@ export function Login() {
             <Heart size={26} className="text-white" fill="white" />
           </div>
           <div>
-            <h1 className="text-xl font-extrabold text-slate-800 dark:text-white">CareBridge AI</h1>
-            <p className="text-xs text-slate-500">Recovery, reimagined.</p>
+            <h1 className="text-xl font-extrabold text-slate-800 dark:text-white">{t('app.name')}</h1>
+            <p className="text-xs text-slate-500">{t('app.recovery_reimagined')}</p>
           </div>
         </div>
 
@@ -90,7 +92,7 @@ export function Login() {
             {(['patient', 'doctor'] as const).map(r => (
               <button key={r} onClick={() => { setRole(r); setEmail(r === 'patient' ? 'sarah@carebridge.app' : 'drchen@carebridge.app'); }}
                 className={`py-2.5 rounded-xl text-sm font-semibold capitalize transition ${role === r ? 'bg-white dark:bg-slate-700 shadow text-primary-600 dark:text-primary-300' : 'text-slate-500'}`}>
-                {r === 'patient' ? 'Patient Login' : 'Doctor / Caregiver'}
+                {r === 'patient' ? t('login.patient_login') : t('login.doctor_caregiver')}
               </button>
             ))}
           </div>
@@ -99,53 +101,53 @@ export function Login() {
         <AnimatePresence mode="wait">
           <motion.div key={mode} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
             <h2 className="text-2xl font-extrabold text-slate-800 dark:text-white mb-1">
-              {mode === 'login' ? 'Welcome back' : mode === 'register' ? 'Create account' : 'Reset password'}
+              {mode === 'login' ? t('login.welcome_back') : mode === 'register' ? t('login.create_account') : t('login.reset_password')}
             </h2>
             <p className="text-sm text-slate-500 mb-6">
-              {mode === 'login' ? `Sign in to your ${role} account` : mode === 'register' ? `Join as a ${role}` : "We'll send you a reset link"}
+              {mode === 'login' ? t('login.sign_in_to', { role }) : mode === 'register' ? t('login.join_as', { role }) : t('login.send_reset_link')}
             </p>
 
             {verify ? (
               <div className="glass-card p-6 text-center">
                 <CheckCircle2 size={48} className="text-success-500 mx-auto mb-3" />
-                <p className="font-semibold text-slate-800 dark:text-white mb-1">Check your email</p>
-                <p className="text-sm text-slate-500 mb-4">A password reset link has been sent to {email}</p>
-                <Button variant="ghost" className="w-full" onClick={() => { setMode('login'); setVerify(false); }}>Back to login</Button>
+                <p className="font-semibold text-slate-800 dark:text-white mb-1">{t('login.check_email')}</p>
+                <p className="text-sm text-slate-500 mb-4">{t('login.reset_sent', { email })}</p>
+                <Button variant="ghost" className="w-full" onClick={() => { setMode('login'); setVerify(false); }}>{t('login.back_to_login')}</Button>
               </div>
             ) : (
               <form onSubmit={(e) => { e.preventDefault(); submit(); }} className="space-y-3">
                 {mode === 'register' && (
                   <div className="relative">
                     <User size={18} className="absolute left-3.5 top-3.5 text-slate-400" />
-                    <input className="input pl-11" placeholder="Full name" defaultValue={role === 'patient' ? 'Sarah Johnson' : 'Dr. Michael Chen'} />
+                    <input className="input pl-11" placeholder={t('login.full_name')} defaultValue={role === 'patient' ? 'Sarah Johnson' : 'Dr. Michael Chen'} />
                   </div>
                 )}
                 <div className="relative">
                   <Mail size={18} className="absolute left-3.5 top-3.5 text-slate-400" />
-                  <input type="email" className="input pl-11" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} />
+                  <input type="email" className="input pl-11" placeholder={t('login.email')} value={email} onChange={e => setEmail(e.target.value)} />
                 </div>
                 {mode !== 'forgot' && (
                   <div className="relative">
                     <Lock size={18} className="absolute left-3.5 top-3.5 text-slate-400" />
-                    <input type="password" className="input pl-11" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} />
+                    <input type="password" className="input pl-11" placeholder={t('login.password')} value={password} onChange={e => setPassword(e.target.value)} />
                   </div>
                 )}
 
                 {mode === 'login' && (
                   <div className="flex justify-end">
-                    <button type="button" onClick={() => setMode('forgot')} className="text-xs text-primary-600 font-medium">Forgot password?</button>
+                    <button type="button" onClick={() => setMode('forgot')} className="text-xs text-primary-600 font-medium">{t('login.forgot_password')}</button>
                   </div>
                 )}
 
                 <Button type="submit" className="w-full">
-                  {mode === 'login' ? 'Sign In' : mode === 'register' ? 'Create Account' : 'Send Reset Link'}
+                  {mode === 'login' ? t('login.sign_in') : mode === 'register' ? t('login.create_btn') : t('login.send_reset')}
                 </Button>
 
                 {mode !== 'forgot' && (
                   <>
                     <div className="flex items-center gap-3 my-4">
                       <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />
-                      <span className="text-xs text-slate-400">or</span>
+                      <span className="text-xs text-slate-400">{t('common.or')}</span>
                       <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />
                     </div>
 
@@ -154,16 +156,16 @@ export function Login() {
                       <button type="button" onClick={mode === 'login' ? voiceSignIn : voiceSignUp}
                         className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-primary-600 to-primary-700 rounded-xl py-3 font-semibold text-sm text-white hover:from-primary-700 hover:to-primary-800 transition shadow-glow">
                         {voiceActive ? <Loader2 size={16} className="animate-spin" /> : <Mic size={16} />}
-                        {voiceActive ? 'Listening...' : mode === 'login' ? 'Sign In with Voice' : 'Register with Voice'}
+                        {voiceActive ? t('login.listening') : mode === 'login' ? t('login.sign_in_voice') : t('login.register_voice')}
                       </button>
                       <p className="text-center text-[10px] text-slate-400">
-                        {mode === 'login' ? 'Say "Log in as Patient Sarah" or "Log in as Doctor Smith"' : 'Say "Register Patient John" or "Register Doctor Lee"'}
+                        {mode === 'login' ? t('login.voice_signin_hint') : t('login.voice_signup_hint')}
                       </p>
                     </div>
 
                     <button type="button" onClick={submit}
                       className="w-full flex items-center justify-center gap-2 border border-slate-200 dark:border-slate-700 rounded-xl py-3 font-semibold text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition">
-                      <GoogleIcon /> Continue with Google
+                      <GoogleIcon /> {t('login.continue_google')}
                     </button>
                   </>
                 )}
@@ -175,15 +177,15 @@ export function Login() {
         {mode !== 'forgot' && !verify && (
           <div className="flex items-center gap-2 mt-6 p-3 bg-primary-50 dark:bg-primary-900/30 rounded-xl">
             <ShieldCheck size={18} className="text-primary-600 shrink-0" />
-            <p className="text-xs text-primary-700 dark:text-primary-300">Email verification is enabled. Use any email — this is a demo.</p>
+            <p className="text-xs text-primary-700 dark:text-primary-300">{t('login.email_verification')}</p>
           </div>
         )}
 
         {mode !== 'forgot' && (
           <p className="text-center text-sm text-slate-500 mt-6">
-            {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
+            {mode === 'login' ? t('login.no_account') + ' ' : t('login.have_account') + ' '}
             <button onClick={() => setMode(mode === 'login' ? 'register' : 'login')} className="text-primary-600 font-semibold">
-              {mode === 'login' ? 'Sign up' : 'Sign in'}
+              {mode === 'login' ? t('login.sign_up') : t('login.sign_in')}
             </button>
           </p>
         )}

@@ -5,17 +5,17 @@ import { useRouter } from '@/router';
 import { Card, Gauge, RiskBadge, Button } from '@/components/ui';
 import { LanguageSelector } from '@/components/LanguageSelector';
 import { DischargeSummary } from '@/components/DischargeSummary';
-import { useTranslation } from '@/i18n';
+import { useTranslation } from 'react-i18next';
 import { useEffect, useState } from 'react';
 
 export function PatientHome() {
   const { state } = useStore();
   const { navigate } = useRouter();
-  const t = useTranslation(state.language);
+  const { t } = useTranslation();
   const patient = state.patients[0];
   const [now, setNow] = useState(new Date());
   const [showSummary, setShowSummary] = useState(false);
-  useEffect(() => { const t = setInterval(() => setNow(new Date()), 60000); return () => clearInterval(t); }, []);
+  useEffect(() => { const timer = setInterval(() => setNow(new Date()), 60000); return () => clearInterval(timer); }, []);
 
   const hour = now.getHours();
   const greeting = hour < 12 ? t('greeting_morning') : hour < 18 ? t('greeting_afternoon') : t('greeting_evening');
@@ -25,12 +25,12 @@ export function PatientHome() {
   const minsToMed = nextMed ? diffMins(now, nextMed.time) : null;
 
   const quickActions = [
-    { label: 'Daily Check-in', icon: Mic, color: 'bg-blue-500', route: 'checkin' as const },
-    { label: 'Medication', icon: Pill, color: 'bg-emerald-500', route: 'medication' as const },
-    { label: 'AI Analysis', icon: BrainCircuit, color: 'bg-amber-500', route: 'ai-analysis' as const },
-    { label: 'Wearables', icon: Watch, color: 'bg-cyan-500', route: 'wearables' as const },
-    { label: 'Doctor', icon: Stethoscope, color: 'bg-violet-500', route: 'doctor-chat' as const },
-    { label: 'Emergency SOS', icon: Siren, color: 'bg-danger-500', route: 'sos' as const },
+    { label: t('home.action_checkin'), icon: Mic, color: 'bg-blue-500', route: 'checkin' as const },
+    { label: t('home.action_medication'), icon: Pill, color: 'bg-emerald-500', route: 'medication' as const },
+    { label: t('home.action_ai'), icon: BrainCircuit, color: 'bg-amber-500', route: 'ai-analysis' as const },
+    { label: t('home.action_wearables'), icon: Watch, color: 'bg-cyan-500', route: 'wearables' as const },
+    { label: t('home.action_doctor'), icon: Stethoscope, color: 'bg-violet-500', route: 'doctor-chat' as const },
+    { label: t('home.action_sos'), icon: Siren, color: 'bg-danger-500', route: 'sos' as const },
   ];
 
   return (
@@ -57,11 +57,11 @@ export function PatientHome() {
       <Card className="mb-4 bg-gradient-to-br from-primary-600 to-primary-800 text-white border-0">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-primary-100 text-sm">Recovery Score</p>
+            <p className="text-primary-100 text-sm">{t('home.recovery_score')}</p>
             <div className="flex items-center gap-2 mt-1">
-              <span className="bg-success-500/30 text-success-100 chip"><TrendingUp size={12} /> Improving</span>
+              <span className="bg-success-500/30 text-success-100 chip"><TrendingUp size={12} /> {t('home.improving')}</span>
             </div>
-            <p className="text-xs text-primary-200 mt-3">Day {patient.recoveryDay} of recovery</p>
+            <p className="text-xs text-primary-200 mt-3">{t('home.day_of_recovery', { n: patient.recoveryDay })}</p>
           </div>
           <div className="text-white"><Gauge value={patient.recoveryScore} size={130} /></div>
         </div>
@@ -70,29 +70,29 @@ export function PatientHome() {
       {/* AI Risk */}
       <Card className="mb-4 flex items-center justify-between">
         <div>
-          <p className="text-xs text-slate-500 dark:text-slate-400">AI Risk Indicator</p>
-          <p className="font-bold text-slate-800 dark:text-white mt-0.5">Complication Risk</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">{t('home.ai_risk')}</p>
+          <p className="font-bold text-slate-800 dark:text-white mt-0.5">{t('home.complication_risk')}</p>
         </div>
         <RiskBadge level={patient.risk} />
       </Card>
 
       {/* Vitals grid - 3 vitals shown when wearable connected */}
       <div className="flex items-center justify-between mb-2">
-        <p className="font-bold text-slate-800 dark:text-white text-sm flex items-center gap-2"><WatchIcon size={16} className="text-primary-600" /> Live Vitals</p>
-        <span className="chip bg-success-100 text-success-700 dark:bg-success-700/30 dark:text-success-400"><span className="w-2 h-2 rounded-full bg-success-500 animate-pulse" /> {patient.vitals.syncedVia} connected</span>
+        <p className="font-bold text-slate-800 dark:text-white text-sm flex items-center gap-2"><WatchIcon size={16} className="text-primary-600" /> {t('home.live_vitals')}</p>
+        <span className="chip bg-success-100 text-success-700 dark:bg-success-700/30 dark:text-success-400"><span className="w-2 h-2 rounded-full bg-success-500 animate-pulse" /> {t('home.device_connected', { device: patient.vitals.syncedVia })}</span>
       </div>
       <div className="grid grid-cols-3 gap-3 mb-4">
-        <VitalCard icon={Heart} color="text-danger-500" label="Heart Rate" value={String(patient.vitals.heartRate)} unit="bpm" />
-        <VitalCard icon={Activity} color="text-primary-500" label="Blood Pressure" value={patient.vitals.bloodPressure} unit="mmHg" />
-        <VitalCard icon={Droplet} color="text-cyan-500" label="Blood Oxygen" value={String(patient.vitals.oxygen)} unit="%" />
+        <VitalCard icon={Heart} color="text-danger-500" label={t('home.heart_rate')} value={String(patient.vitals.heartRate)} unit={t('home.bpm')} />
+        <VitalCard icon={Activity} color="text-primary-500" label={t('home.blood_pressure')} value={patient.vitals.bloodPressure} unit={t('home.mmhg')} />
+        <VitalCard icon={Droplet} color="text-cyan-500" label={t('home.blood_oxygen')} value={String(patient.vitals.oxygen)} unit="%" />
       </div>
-      <p className="text-xs text-slate-400 text-center mb-4 -mt-1">Synced {patient.vitals.lastSync}</p>
+      <p className="text-xs text-slate-400 text-center mb-4 -mt-1">{t('home.synced_time', { time: patient.vitals.lastSync })}</p>
 
       {/* Medication */}
       <Card className="mb-4">
         <div className="flex items-center justify-between mb-2">
-          <p className="font-bold text-slate-800 dark:text-white">Today's Medications</p>
-          <button onClick={() => navigate('medication')} className="text-xs text-primary-600 font-semibold">View all</button>
+          <p className="font-bold text-slate-800 dark:text-white">{t('home.todays_meds')}</p>
+          <button onClick={() => navigate('medication')} className="text-xs text-primary-600 font-semibold">{t('home.view_all')}</button>
         </div>
         {nextMed ? (
           <div className="flex items-center justify-between">
@@ -102,21 +102,21 @@ export function PatientHome() {
               </div>
               <div>
                 <p className="font-semibold text-slate-800 dark:text-white text-sm">{nextMed.name} {nextMed.dosage}</p>
-                <p className="text-xs text-slate-500">⏰ {minsToMed !== null && minsToMed > 0 ? `In ${formatMins(minsToMed)}` : 'Due now'}</p>
+                <p className="text-xs text-slate-500">⏰ {minsToMed !== null && minsToMed > 0 ? t('home.in_time', { time: formatMins(minsToMed) }) : t('home.due_now')}</p>
               </div>
             </div>
-            <Button variant="success" onClick={() => navigate('medication')}>Take</Button>
+            <Button variant="success" onClick={() => navigate('medication')}>{t('home.take')}</Button>
           </div>
         ) : (
-          <p className="text-sm text-success-600 font-medium">All medications taken today!</p>
+          <p className="text-sm text-success-600 font-medium">{t('home.all_meds_taken')}</p>
         )}
       </Card>
 
       {/* Next appointment */}
       <Card className="mb-4">
         <div className="flex items-center justify-between mb-2">
-          <p className="font-bold text-slate-800 dark:text-white text-sm">Next Appointment</p>
-          <button onClick={() => navigate('book-appointment')} className="text-xs text-primary-600 font-semibold flex items-center gap-1"><CalendarPlus size={12} /> Book</button>
+          <p className="font-bold text-slate-800 dark:text-white text-sm">{t('home.next_appointment')}</p>
+          <button onClick={() => navigate('book-appointment')} className="text-xs text-primary-600 font-semibold flex items-center gap-1"><CalendarPlus size={12} /> {t('home.book')}</button>
         </div>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -128,7 +128,7 @@ export function PatientHome() {
               <p className="text-xs text-slate-500">{patient.nextAppointment.date} · {patient.nextAppointment.time}</p>
             </div>
           </div>
-          <Button onClick={() => navigate('video-call')}>Join Call</Button>
+          <Button onClick={() => navigate('video-call')}>{t('home.join_call')}</Button>
         </div>
       </Card>
 
@@ -137,15 +137,15 @@ export function PatientHome() {
         <div className="flex items-center gap-3">
           <Flame size={28} className="text-orange-500" />
           <div>
-            <p className="font-extrabold text-slate-800 dark:text-white">{patient.streak} Days</p>
-            <p className="text-xs text-slate-500">Daily Check-in Streak</p>
+            <p className="font-extrabold text-slate-800 dark:text-white">{t('home.days', { n: patient.streak })}</p>
+            <p className="text-xs text-slate-500">{t('home.checkin_streak')}</p>
           </div>
         </div>
         <Calendar size={20} className="text-amber-400" />
       </Card>
 
       {/* Quick actions */}
-      <p className="font-bold text-slate-800 dark:text-white mb-3">Quick Actions</p>
+      <p className="font-bold text-slate-800 dark:text-white mb-3">{t('home.quick_actions')}</p>
       <div className="grid grid-cols-3 gap-3 mb-4">
         {quickActions.map(a => (
           <motion.button key={a.label} whileTap={{ scale: 0.94 }} onClick={() => navigate(a.route)}
@@ -161,14 +161,14 @@ export function PatientHome() {
       {/* Recovery shortcut */}
       <Card onClick={() => navigate('recovery')} className="flex items-center justify-between mb-3">
         <div>
-          <p className="font-bold text-slate-800 dark:text-white text-sm">Recovery Progress</p>
-          <p className="text-xs text-slate-500">View trends & achievements</p>
+          <p className="font-bold text-slate-800 dark:text-white text-sm">{t('home.recovery_progress')}</p>
+          <p className="text-xs text-slate-500">{t('home.view_trends')}</p>
         </div>
         <ChevronRight size={20} className="text-slate-400" />
       </Card>
 
       {/* Discharge summary */}
-      <Button variant="outline" className="w-full" onClick={() => setShowSummary(true)}><FileText size={16} /> Download Clinical Recovery Summary</Button>
+      <Button variant="outline" className="w-full" onClick={() => setShowSummary(true)}><FileText size={16} /> {t('home.download_summary')}</Button>
 
       <DischargeSummary open={showSummary} onClose={() => setShowSummary(false)} />
     </div>

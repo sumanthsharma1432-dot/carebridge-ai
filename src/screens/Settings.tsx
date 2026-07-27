@@ -5,6 +5,8 @@ import { useRouter } from '@/router';
 import { Card, PageHeader, Button } from '@/components/ui';
 import { useVoiceEngine } from '@/components/useVoiceEngine';
 import { useToast } from '@/components/Toast';
+import { useTranslation } from 'react-i18next';
+import { LanguageManager } from '@/components/LanguageManager';
 
 const WAKE_PRESETS = ['Hey CareBridge', 'Hey Care', 'Hey Bridge', 'Hey Doctor'];
 
@@ -13,6 +15,8 @@ export function Settings() {
   const { back, navigate } = useRouter();
   const { voices, speechSupported, recSupported, speak, recognize, updateVoice } = useVoiceEngine();
   const { show } = useToast();
+  const { t } = useTranslation();
+  const [showLangManager, setShowLangManager] = useState(false);
 
   const [testingWake, setTestingWake] = useState(false);
   const [wakeResult, setWakeResult] = useState<'none' | 'success' | 'fail'>('none');
@@ -21,12 +25,12 @@ export function Settings() {
   const filteredVoices = voices.filter(v => v.lang.toLowerCase().startsWith(langCode));
 
   const testVoice = () => {
-    if (!speechSupported) { show({ type: 'info', title: 'Voice unavailable', body: 'Your browser does not support speech synthesis.' }); return; }
-    speak('Hello, I am your CareBridge AI recovery assistant');
+    if (!speechSupported) { show({ type: 'info', title: t('settings.voice_unavailable'), body: t('settings.browser_no_synthesis') }); return; }
+    speak(t('settings.test_phrase_spoken'));
   };
 
   const testWake = () => {
-    if (!recSupported) { show({ type: 'info', title: 'Microphone unavailable', body: 'Your browser does not support speech recognition.' }); return; }
+    if (!recSupported) { show({ type: 'info', title: t('settings.mic_unavailable'), body: t('settings.rec_not_supported') }); return; }
     setTestingWake(true);
     setWakeResult('none');
     const ok = recognize((text) => {
@@ -34,57 +38,57 @@ export function Settings() {
       const target = state.voice.wakeWord.toLowerCase().trim();
       if (heard.includes(target) || target.includes(heard)) {
         setWakeResult('success');
-        show({ type: 'success', title: 'Trigger Recognized!', body: `Heard: "${text}"` });
+        show({ type: 'success', title: t('settings.trigger_recognized'), body: t('settings.heard', { text }) });
       } else {
         setWakeResult('fail');
-        show({ type: 'error', title: 'Try speaking clearly again', body: `Heard: "${text}"` });
+        show({ type: 'error', title: t('settings.try_again'), body: t('settings.heard', { text }) });
       }
       setTestingWake(false);
     }, () => setTestingWake(false));
-    if (!ok) { setTestingWake(false); show({ type: 'info', title: 'Microphone unavailable', body: 'Speech recognition is not supported.' }); }
+    if (!ok) { setTestingWake(false); show({ type: 'info', title: t('settings.mic_unavailable'), body: t('settings.speech_not_supported') }); }
   };
 
   return (
     <div className="pb-24 px-4 pt-6 max-w-md mx-auto">
-      <button onClick={back} className="mb-3 text-slate-400 flex items-center gap-1 text-sm"><ArrowLeft size={16} /> Back</button>
-      <PageHeader title="Settings" subtitle="Customize your experience" />
+      <button onClick={back} className="mb-3 text-slate-400 flex items-center gap-1 text-sm"><ArrowLeft size={16} /> {t('common.back')}</button>
+      <PageHeader title={t('settings.title')} subtitle={t('settings.subtitle')} />
 
       <Card className="mb-3">
-        <Toggle icon={Moon} label="Dark Mode" value={state.darkMode} onChange={v => update({ darkMode: v })} />
+        <Toggle icon={Moon} label={t('settings.dark_mode')} value={state.darkMode} onChange={v => update({ darkMode: v })} />
         <div className="border-t border-slate-100 dark:border-slate-700 my-2" />
-        <Toggle icon={Bell} label="Notifications" value={state.notifications} onChange={v => update({ notifications: v })} />
+        <Toggle icon={Bell} label={t('settings.notifications')} value={state.notifications} onChange={v => update({ notifications: v })} />
       </Card>
 
       <Card className="mb-3">
         <div className="flex items-center justify-between py-1">
-          <div className="flex items-center gap-3"><Globe size={18} className="text-slate-500" /><span className="text-sm font-medium text-slate-700 dark:text-slate-200">Language</span></div>
-          <select value={state.language} onChange={e => update({ language: e.target.value })} className="text-sm bg-transparent text-slate-600 dark:text-slate-300 outline-none">
-            <option>English</option><option>Spanish</option><option>French</option><option>German</option><option>Hindi</option>
-          </select>
+          <div className="flex items-center gap-3"><Globe size={18} className="text-slate-500" /><span className="text-sm font-medium text-slate-700 dark:text-slate-200">{t('settings.language')}</span></div>
+          <button onClick={() => setShowLangManager(true)} className="text-sm bg-transparent text-slate-600 dark:text-slate-300 outline-none flex items-center gap-1">
+            {state.language} <ChevronRight size={14} className="text-slate-400" />
+          </button>
         </div>
       </Card>
 
       {/* Voice & Persona Selection */}
       <Card className="mb-3">
-        <p className="font-bold text-slate-800 dark:text-white text-sm mb-3 flex items-center gap-2"><AudioLines size={16} className="text-primary-600" /> Voice & Persona Selection</p>
+        <p className="font-bold text-slate-800 dark:text-white text-sm mb-3 flex items-center gap-2"><AudioLines size={16} className="text-primary-600" /> {t('settings.voice_persona')}</p>
 
-        {!speechSupported && <p className="text-xs text-danger-500 mb-2">Speech synthesis is not supported in this browser.</p>}
+        {!speechSupported && <p className="text-xs text-danger-500 mb-2">{t('settings.speech_not_supported')}</p>}
 
-        <label className="text-xs text-slate-500 mb-1 block">Voice</label>
+        <label className="text-xs text-slate-500 mb-1 block">{t('settings.voice')}</label>
         <select
           value={state.voice.voiceName}
           onChange={e => updateVoice({ voiceName: e.target.value })}
           disabled={!speechSupported}
           className="w-full text-sm bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl px-3 py-2 mb-3 outline-none border border-slate-200 dark:border-slate-700 disabled:opacity-50"
         >
-          <option value="">Default (Auto)</option>
+          <option value="">{t('settings.default_auto')}</option>
           {filteredVoices.map(v => <option key={v.name} value={v.name}>{v.name} ({v.lang})</option>)}
           {filteredVoices.length === 0 && voices.map(v => <option key={v.name} value={v.name}>{v.name} ({v.lang})</option>)}
         </select>
 
         <div className="mb-3">
           <div className="flex justify-between mb-1">
-            <label className="text-xs text-slate-500">Speech Pitch</label>
+            <label className="text-xs text-slate-500">{t('settings.speech_pitch')}</label>
             <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">{state.voice.pitch.toFixed(2)}</span>
           </div>
           <input type="range" min={0.5} max={1.5} step={0.05} value={state.voice.pitch} onChange={e => updateVoice({ pitch: +e.target.value })} className="w-full h-2 rounded-full appearance-none cursor-pointer" style={{ accentColor: '#0ea5e9' }} />
@@ -92,14 +96,14 @@ export function Settings() {
 
         <div className="mb-3">
           <div className="flex justify-between mb-1">
-            <label className="text-xs text-slate-500">Speech Rate / Speed</label>
+            <label className="text-xs text-slate-500">{t('settings.speech_rate')}</label>
             <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">{state.voice.rate.toFixed(2)}x</span>
           </div>
           <input type="range" min={0.8} max={1.5} step={0.05} value={state.voice.rate} onChange={e => updateVoice({ rate: +e.target.value })} className="w-full h-2 rounded-full appearance-none cursor-pointer" style={{ accentColor: '#0ea5e9' }} />
         </div>
 
         <Button variant="ghost" className="w-full" onClick={testVoice} disabled={!speechSupported}>
-          <Volume2 size={16} /> Test Voice Persona
+          <Volume2 size={16} /> {t('settings.test_voice')}
         </Button>
       </Card>
 
@@ -126,41 +130,43 @@ export function Settings() {
         </div>
 
         <Button variant="ghost" className="w-full mb-2" onClick={testWake} disabled={!recSupported || testingWake}>
-          <Mic size={16} /> {testingWake ? 'Listening...' : 'Test My Phrase'}
+          <Mic size={16} /> {testingWake ? t('login.listening') : t('settings.test_phrase')}
         </Button>
 
         {wakeResult === 'success' && (
           <div className="flex items-center gap-2 text-xs font-semibold text-success-600 bg-success-50 dark:bg-success-700/20 rounded-lg px-3 py-2">
-            <Check size={14} /> Trigger Recognized!
+            <Check size={14} /> {t('settings.trigger_recognized')}
           </div>
         )}
         {wakeResult === 'fail' && (
           <div className="flex items-center gap-2 text-xs font-semibold text-danger-500 bg-danger-50 dark:bg-danger-700/20 rounded-lg px-3 py-2">
-            <X size={14} /> Try speaking clearly again
+            <X size={14} /> {t('settings.try_again')}
           </div>
         )}
       </Card>
 
       {/* Hands-Free Mode */}
       <Card className="mb-3">
-        <Toggle icon={Ear} label="Always-Listening / Hands-Free Mode" value={state.voice.handsFree} onChange={v => {
+        <Toggle icon={Ear} label={t('settings.hands_free')} value={state.voice.handsFree} onChange={v => {
           updateVoice({ handsFree: v });
-          show({ type: v ? 'success' : 'info', title: v ? 'Hands-Free Mode enabled' : 'Hands-Free Mode disabled', body: v ? `Say "${state.voice.wakeWord}" to activate the assistant` : 'Background listening is off' });
+          show({ type: v ? 'success' : 'info', title: v ? t('settings.hands_free_enabled') : t('settings.hands_free_disabled'), body: v ? t('settings.say_wake_activate', { wakeWord: state.voice.wakeWord }) : t('settings.background_off') });
         }} />
-        {!recSupported && state.voice.handsFree && <p className="text-xs text-danger-500 mt-2">Speech recognition is required for hands-free mode.</p>}
+        {!recSupported && state.voice.handsFree && <p className="text-xs text-danger-500 mt-2">{t('settings.hands_free_required')}</p>}
       </Card>
 
       <Card className="mb-3">
-        <SettingRow icon={Shield} label="Privacy & Security" onClick={() => {}} />
+        <SettingRow icon={Shield} label={t('settings.privacy_security')} onClick={() => {}} />
         <div className="border-t border-slate-100 dark:border-slate-700 my-1" />
-        <SettingRow icon={HelpCircle} label="Help & Support" onClick={() => {}} />
+        <SettingRow icon={HelpCircle} label={t('settings.help_support')} onClick={() => {}} />
       </Card>
 
       <button onClick={() => { update({ authed: false }); navigate('login'); }} className="w-full glass-card flex items-center gap-3 p-4 text-danger-500 font-semibold text-sm">
-        <LogOut size={18} /> Log Out
+        <LogOut size={18} /> {t('settings.log_out')}
       </button>
 
-      <p className="text-center text-xs text-slate-400 mt-6">CareBridge AI · Version 1.0.0</p>
+      <p className="text-center text-xs text-slate-400 mt-6">{t('app.version')}</p>
+
+      <LanguageManager open={showLangManager} onClose={() => setShowLangManager(false)} />
     </div>
   );
 }

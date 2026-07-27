@@ -6,11 +6,13 @@ import { useRouter } from '@/router';
 import { Card, Button, Chip, PageHeader } from '@/components/ui';
 import { MedicineScanner, type ScannedMedication } from '@/components/MedicineScanner';
 import { useToast } from '@/components/Toast';
+import { useTranslation } from 'react-i18next';
 
 export function Medication() {
   const { state, setState } = useStore();
   const { back } = useRouter();
   const { show } = useToast();
+  const { t } = useTranslation();
   const [showAdd, setShowAdd] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [newMed, setNewMed] = useState({ name: '', dosage: '', time: '08:00', instructions: '' });
@@ -38,21 +40,21 @@ export function Medication() {
 
   return (
     <div className="pb-24 px-4 pt-6 max-w-md mx-auto">
-      <button onClick={back} className="mb-3 text-slate-400 flex items-center gap-1 text-sm"><ArrowLeft size={16} /> Back</button>
-      <PageHeader title="Medications" subtitle="Daily schedule & adherence" right={
+      <button onClick={back} className="mb-3 text-slate-400 flex items-center gap-1 text-sm"><ArrowLeft size={16} /> {t('common.back')}</button>
+      <PageHeader title={t('medication.title')} subtitle={t('medication.subtitle')} right={
         <div className="flex gap-2">
-          <Button variant="ghost" onClick={() => setShowScanner(true)}><ScanLine size={16} /> Scan</Button>
-          <Button variant="ghost" onClick={() => setShowAdd(true)}><Plus size={16} /> Add</Button>
+          <Button variant="ghost" onClick={() => setShowScanner(true)}><ScanLine size={16} /> {t('medication.scan')}</Button>
+          <Button variant="ghost" onClick={() => setShowAdd(true)}><Plus size={16} /> {t('medication.add')}</Button>
         </div>
       } />
 
       <div className="grid grid-cols-3 gap-3 mb-5">
-        <Card className="text-center"><p className="text-2xl font-extrabold text-success-600">{meds.filter(m => m.taken).length}</p><p className="text-xs text-slate-500">Taken</p></Card>
-        <Card className="text-center"><p className="text-2xl font-extrabold text-warning-500">{meds.filter(m => !m.taken && !m.missed).length}</p><p className="text-xs text-slate-500">Pending</p></Card>
-        <Card className="text-center"><p className="text-2xl font-extrabold text-danger-500">{meds.filter(m => m.missed).length}</p><p className="text-xs text-slate-500">Missed</p></Card>
+        <Card className="text-center"><p className="text-2xl font-extrabold text-success-600">{meds.filter(m => m.taken).length}</p><p className="text-xs text-slate-500">{t('common.taken')}</p></Card>
+        <Card className="text-center"><p className="text-2xl font-extrabold text-warning-500">{meds.filter(m => !m.taken && !m.missed).length}</p><p className="text-xs text-slate-500">{t('common.pending')}</p></Card>
+        <Card className="text-center"><p className="text-2xl font-extrabold text-danger-500">{meds.filter(m => m.missed).length}</p><p className="text-xs text-slate-500">{t('common.missed')}</p></Card>
       </div>
 
-      <p className="font-bold text-slate-800 dark:text-white mb-3">Today's Schedule</p>
+      <p className="font-bold text-slate-800 dark:text-white mb-3">{t('medication.todays_schedule')}</p>
       <div className="space-y-3 mb-6">
         {meds.map(m => (
           <Card key={m.id}>
@@ -67,7 +69,7 @@ export function Medication() {
                 </div>
               </div>
               {m.taken ? (
-                <Chip color="success"><Check size={12} /> Taken</Chip>
+                <Chip color="success"><Check size={12} /> {t('common.taken')}</Chip>
               ) : (
                 <div className="flex gap-2">
                   <button onClick={() => toggle(m.id, false)} className="w-9 h-9 rounded-lg bg-danger-100 dark:bg-danger-500/20 flex items-center justify-center"><X size={16} className="text-danger-500" /></button>
@@ -79,13 +81,13 @@ export function Medication() {
         ))}
       </div>
 
-      <p className="font-bold text-slate-800 dark:text-white mb-3 flex items-center gap-2"><History size={16} /> History Log</p>
+      <p className="font-bold text-slate-800 dark:text-white mb-3 flex items-center gap-2"><History size={16} /> {t('medication.history_log')}</p>
       <Card>
         <div className="space-y-2 text-sm">
-          <div className="flex justify-between"><span className="text-slate-600 dark:text-slate-300">Amoxicillin 500mg</span><Chip color="success">Yesterday · Taken</Chip></div>
-          <div className="flex justify-between"><span className="text-slate-600 dark:text-slate-300">Ibuprofen 400mg</span><Chip color="success">Yesterday · Taken</Chip></div>
-          <div className="flex justify-between"><span className="text-slate-600 dark:text-slate-300">Cetirizine 10mg</span><Chip color="danger">2 days ago · Missed</Chip></div>
-          <div className="flex justify-between"><span className="text-slate-600 dark:text-slate-300">Amoxicillin 500mg</span><Chip color="success">2 days ago · Taken</Chip></div>
+          <div className="flex justify-between"><span className="text-slate-600 dark:text-slate-300">Amoxicillin 500mg</span><Chip color="success">{t('medication.yesterday_taken')}</Chip></div>
+          <div className="flex justify-between"><span className="text-slate-600 dark:text-slate-300">Ibuprofen 400mg</span><Chip color="success">{t('medication.yesterday_taken')}</Chip></div>
+          <div className="flex justify-between"><span className="text-slate-600 dark:text-slate-300">Cetirizine 10mg</span><Chip color="danger">{t('medication.days_ago_missed')}</Chip></div>
+          <div className="flex justify-between"><span className="text-slate-600 dark:text-slate-300">Amoxicillin 500mg</span><Chip color="success">{t('medication.days_ago_taken')}</Chip></div>
         </div>
       </Card>
 
@@ -95,24 +97,24 @@ export function Medication() {
           patients[0] = { ...patients[0], medications: [...patients[0].medications, { id: 'm' + Date.now(), name: med.name, dosage: med.dosage, time: med.time, instructions: med.instructions, taken: false }] };
           return { ...s, patients };
         });
-        show({ type: 'success', title: 'Medication added from scan', body: `${med.name} ${med.dosage} · expires ${med.expiration}` });
+        show({ type: 'success', title: t('medication.scan_added'), body: t('medication.scan_added_body', { name: med.name, dosage: med.dosage, expiration: med.expiration }) });
       }} />
 
       <AnimatePresence>
         {showAdd && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-4" onClick={() => setShowAdd(false)}>
             <motion.div initial={{ y: 50 }} animate={{ y: 0 }} className="glass-card w-full max-w-md p-5" onClick={e => e.stopPropagation()}>
-              <p className="font-bold text-slate-800 dark:text-white mb-4">Add Medication Reminder</p>
+              <p className="font-bold text-slate-800 dark:text-white mb-4">{t('medication.add_reminder')}</p>
               <div className="space-y-3">
-                <input className="input" placeholder="Medication name" value={newMed.name} onChange={e => setNewMed({ ...newMed, name: e.target.value })} />
+                <input className="input" placeholder={t('medication.med_name_placeholder')} value={newMed.name} onChange={e => setNewMed({ ...newMed, name: e.target.value })} />
                 <div className="grid grid-cols-2 gap-3">
-                  <input className="input" placeholder="Dosage (e.g. 200mg)" value={newMed.dosage} onChange={e => setNewMed({ ...newMed, dosage: e.target.value })} />
+                  <input className="input" placeholder={t('medication.dosage_placeholder')} value={newMed.dosage} onChange={e => setNewMed({ ...newMed, dosage: e.target.value })} />
                   <input type="time" className="input" value={newMed.time} onChange={e => setNewMed({ ...newMed, time: e.target.value })} />
                 </div>
-                <input className="input" placeholder="Instructions" value={newMed.instructions} onChange={e => setNewMed({ ...newMed, instructions: e.target.value })} />
+                <input className="input" placeholder={t('medication.instructions_placeholder')} value={newMed.instructions} onChange={e => setNewMed({ ...newMed, instructions: e.target.value })} />
                 <div className="flex gap-3 pt-2">
-                  <Button variant="ghost" className="flex-1" onClick={() => setShowAdd(false)}>Cancel</Button>
-                  <Button className="flex-1" onClick={addMed}>Add Reminder</Button>
+                  <Button variant="ghost" className="flex-1" onClick={() => setShowAdd(false)}>{t('common.cancel')}</Button>
+                  <Button className="flex-1" onClick={addMed}>{t('medication.add_reminder_btn')}</Button>
                 </div>
               </div>
             </motion.div>

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, createContext, useContext, type ReactNode } from 'react';
 import type { AppState } from './types';
 import { initialState } from './data/mock';
+import { setLanguage, getLangInfo, LANGUAGES } from './i18n';
 
 const KEY = 'carebridge_state_v1';
 
@@ -8,6 +9,8 @@ function load(): AppState {
   try {
     const raw = localStorage.getItem(KEY);
     const base = raw ? { ...initialState, ...JSON.parse(raw) } : initialState;
+    const savedLang = localStorage.getItem('carebridge_lang');
+    if (savedLang) base.language = getLangInfo(savedLang).label;
     // Hydrate voice settings from dedicated keys
     const vname = localStorage.getItem('carebridge_voice_name');
     const pitch = localStorage.getItem('carebridge_voice_pitch');
@@ -51,6 +54,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     document.documentElement.classList.toggle('dark', state.darkMode);
   }, [state.darkMode]);
+
+  useEffect(() => {
+    const langInfo = LANGUAGES.find(l => l.label === state.language);
+    if (langInfo) setLanguage(langInfo.code);
+  }, [state.language]);
 
   const update = useCallback((patch: Partial<AppState>) => setState(s => ({ ...s, ...patch })), []);
   const reset = useCallback(() => setState(initialState), []);

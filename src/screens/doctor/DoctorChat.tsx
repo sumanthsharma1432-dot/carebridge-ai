@@ -5,10 +5,12 @@ import { useStore } from '@/store';
 import { useRouter } from '@/router';
 import { Card } from '@/components/ui';
 import type { ChatMessage } from '@/types';
+import { useTranslation } from 'react-i18next';
 
 export function DoctorChat() {
   const { state, setState } = useStore();
   const { navigate, back } = useRouter();
+  const { t } = useTranslation();
   const [input, setInput] = useState('');
   const [playing, setPlaying] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -18,7 +20,7 @@ export function DoctorChat() {
   const send = (type: 'text' | 'image' | 'voice', text?: string) => {
     const msg: ChatMessage = {
       id: 'm' + Date.now(), from: 'patient', type,
-      text: type === 'text' ? (text ?? input) : type === 'image' ? 'Wound photo' : undefined,
+      text: type === 'text' ? (text ?? input) : type === 'image' ? t('doctor_chat.wound_photo') : undefined,
       image: type === 'image' ? 'https://images.pexels.com/photos/4226119/pexels-photo-4226119.jpeg?auto=compress&w=400' : undefined,
       voiceDuration: type === 'voice' ? '0:09' : undefined,
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -27,7 +29,7 @@ export function DoctorChat() {
     if (type === 'text') setInput('');
     // simulated doctor reply
     setTimeout(() => {
-      const reply: ChatMessage = { id: 'r' + Date.now(), from: 'doctor', type: 'text', text: 'Thanks for the update. Keep monitoring and rest well.', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
+      const reply: ChatMessage = { id: 'r' + Date.now(), from: 'doctor', type: 'text', text: t('doctor_chat.doctor_reply'), time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
       setState(s => ({ ...s, chat: [...s.chat, reply] }));
     }, 1500);
   };
@@ -39,8 +41,8 @@ export function DoctorChat() {
         <button onClick={back} className="text-slate-400"><ArrowLeft size={20} /></button>
         <img src="https://images.pexels.com/photos/5407206/pexels-photo-5407206.jpeg?auto=compress&w=200" alt="" className="w-10 h-10 rounded-full object-cover" />
         <div className="flex-1">
-          <p className="font-bold text-slate-800 dark:text-white text-sm">Dr. Michael Chen</p>
-          <p className="text-xs text-success-600 flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-success-500" /> Online</p>
+          <p className="font-bold text-slate-800 dark:text-white text-sm">{t('doctor_home.dr_chen')}</p>
+          <p className="text-xs text-success-600 flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-success-500" /> {t('doctor_chat.online')}</p>
         </div>
         <button onClick={() => navigate('video-call')} className="w-10 h-10 rounded-xl bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center"><Video size={18} className="text-primary-600" /></button>
         <button className="w-10 h-10 rounded-xl bg-success-100 dark:bg-success-700/30 flex items-center justify-center"><Phone size={18} className="text-success-600" /></button>
@@ -78,7 +80,7 @@ export function DoctorChat() {
       <div className="p-3 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 flex items-center gap-2">
         <button onClick={() => send('image')} className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center shrink-0"><ImageIcon size={18} className="text-slate-500" /></button>
         <button onClick={() => send('voice')} className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center shrink-0"><Mic size={18} className="text-slate-500" /></button>
-        <input className="flex-1 rounded-full bg-slate-100 dark:bg-slate-700 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary-500 text-slate-800 dark:text-white" placeholder="Type a message..." value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && input && send('text')} />
+        <input className="flex-1 rounded-full bg-slate-100 dark:bg-slate-700 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary-500 text-slate-800 dark:text-white" placeholder={t('doctor_chat.type_message')} value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && input && send('text')} />
         <button onClick={() => input && send('text')} className="w-10 h-10 rounded-xl bg-primary-600 flex items-center justify-center shrink-0"><Send size={18} className="text-white" /></button>
       </div>
     </div>

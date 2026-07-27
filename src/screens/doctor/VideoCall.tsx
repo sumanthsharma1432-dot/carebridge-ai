@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mic, MicOff, Video, VideoOff, Volume2, PhoneOff, ArrowLeft, Users } from 'lucide-react';
 import { useRouter } from '@/router';
+import { useTranslation } from 'react-i18next';
 
 export function VideoCall() {
   const { back } = useRouter();
+  const { t } = useTranslation();
   const [muted, setMuted] = useState(false);
   const [camOff, setCamOff] = useState(false);
   const [speaker, setSpeaker] = useState(true);
@@ -14,9 +16,9 @@ export function VideoCall() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-900 text-white">
         <div className="w-20 h-20 rounded-full bg-success-500 flex items-center justify-center mb-4"><PhoneOff size={36} /></div>
-        <p className="text-xl font-bold">Call Ended</p>
-        <p className="text-slate-400 text-sm mt-1">Duration: 12:34</p>
-        <button onClick={back} className="mt-8 bg-white text-slate-900 font-bold rounded-2xl px-8 py-3">Back to Chat</button>
+        <p className="text-xl font-bold">{t('video_call.call_ended')}</p>
+        <p className="text-slate-400 text-sm mt-1">{t('video_call.duration')}</p>
+        <button onClick={back} className="mt-8 bg-white text-slate-900 font-bold rounded-2xl px-8 py-3">{t('video_call.back_to_chat')}</button>
       </div>
     );
   }
@@ -27,8 +29,8 @@ export function VideoCall() {
       <div className="flex items-center justify-between p-4 text-white">
         <button onClick={back}><ArrowLeft size={22} /></button>
         <div className="text-center">
-          <p className="font-bold text-sm">Dr. Michael Chen</p>
-          <p className="text-xs text-success-400 flex items-center justify-center gap-1"><span className="w-2 h-2 rounded-full bg-success-500 animate-pulse" /> Connected · 12:34</p>
+          <p className="font-bold text-sm">{t('doctor_home.dr_chen')}</p>
+          <p className="text-xs text-success-400 flex items-center justify-center gap-1"><span className="w-2 h-2 rounded-full bg-success-500 animate-pulse" /> {t('video_call.connected')}</p>
         </div>
         <Users size={22} />
       </div>
@@ -37,7 +39,7 @@ export function VideoCall() {
       <div className="flex-1 flex items-center justify-center relative p-4">
         <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-full max-w-md aspect-[3/4] rounded-3xl bg-gradient-to-br from-primary-600 to-primary-900 flex items-center justify-center shadow-2xl relative overflow-hidden">
           <img src="https://images.pexels.com/photos/5407206/pexels-photo-5407206.jpeg?auto=compress&w=600" alt="" className="w-full h-full object-cover" />
-          <div className="absolute bottom-3 left-3 bg-black/40 backdrop-blur px-3 py-1 rounded-full text-white text-xs font-medium">Dr. Michael Chen</div>
+          <div className="absolute bottom-3 left-3 bg-black/40 backdrop-blur px-3 py-1 rounded-full text-white text-xs font-medium">{t('doctor_home.dr_chen')}</div>
         </motion.div>
 
         {/* Self view */}
